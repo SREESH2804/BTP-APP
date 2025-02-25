@@ -6,5 +6,5 @@ applications:
       - python_buildpack
     command: python app.py
     env:
-      GOOGLE_API_KEY: "AIzaSyA4jwQI-BYjyc_qfqb_00mjm6nW2McIdlM"
+      GOOGLE_API_KEY: ""
       SERVICE_ACCOUNT_FILE: "gemini-chatbot-project-450909-1d9e13bab354.json"

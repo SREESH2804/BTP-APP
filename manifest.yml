@@ -1,7 +1,7 @@
 applications:
   - name: my-btp-python-script
-    memory: 4G
-    disk_quota: 4G
+    memory: 3.5G
+    disk_quota: 7G
     buildpacks:
       - python_buildpack
     command: python app.py

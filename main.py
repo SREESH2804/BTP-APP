@@ -14,7 +14,7 @@ from google.oauth2 import service_account
 import tempfile
 
 # --- Set API Keys ---
-os.environ["GOOGLE_API_KEY"] = "AIzaSyA4jwQI-BYjyc_qfqb_00mjm6nW2McIdlM"  # Replace with your API key
+os.environ["GOOGLE_API_KEY"] = ""  # Replace with your API key
 SERVICE_ACCOUNT_FILE = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "gemini-chatbot-project-450909-1d9e13bab354.json")
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 FOLDER_ID = "1xqOpwgwUoiJYf9GkeuB4dayme4zJcujf"

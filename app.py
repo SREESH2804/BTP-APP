@@ -19,7 +19,7 @@ app = Flask(__name__)
 os.environ["GOOGLE_API_KEY"] = "AIzaSyA4jwQI-BYjyc_qfqb_00mjm6nW2McIdlM"  # Replace with your actual API key
 
 # --- Google Drive API Setup ---
-SERVICE_ACCOUNT_FILE = "gemini-chatbot-project-450909-1d9e13bab354.json"
+SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), "credentials", "gemini-chatbot-project-450909-1d9e13bab354.json")
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 FOLDER_ID = "1xqOpwgwUoiJYf9GkeuB4dayme4zJcujf"  # Replace with your folder ID
 

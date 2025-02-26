@@ -1,37 +1,33 @@
 import os
 import io
+import json
+import tempfile
 import google.generativeai as genai
 from flask import Flask, request, jsonify, render_template
-#from langchain.vectorstores import FAISS
-#from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
-#from langchain.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
 from langchain.chains import RetrievalQA
 from langchain_google_genai import ChatGoogleGenerativeAI
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-from google.auth import load_credentials_from_file
-import tempfile
+from google.oauth2 import service_account
 
 app = Flask(__name__)
 
-# --- Set API Keys ---
+# --- Load API Keys from Environment Variables ---
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID")  # Set this in your environment variables
 
+# --- Load Credentials from Environment Variable ---
+if not GOOGLE_SERVICE_ACCOUNT_JSON:
+    raise ValueError("Missing Google Service Account JSON in environment variables.")
 
-
-#os.environ["GOOGLE_API_KEY"] = "AIzaSyA4jwQI-BYjyc_qfqb_00mjm6nW2McIdlM"  # Replace with your actual API key
-
-# --- Google Drive API Setup ---
-SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), "credentials", "gemini-chatbot-project-450909-1d9e13bab354.json")
-SCOPES = ["https://www.googleapis.com/auth/drive"]
-FOLDER_ID = "1xqOpwgwUoiJYf9GkeuB4dayme4zJcujf"  # Replace with your folder ID
-
-creds, _ = load_credentials_from_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-drive_service = build("drive", "v3", credentials=creds)
+service_account_info = json.loads(GOOGLE_SERVICE_ACCOUNT_JSON)
+credentials = service_account.Credentials.from_service_account_info(service_account_info)
+drive_service = build("drive", "v3", credentials=credentials)
 
 # --- Function to List Files in Google Drive ---
 def get_files_from_drive():
@@ -56,19 +52,18 @@ def load_documents(file_stream, mime_type):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
             temp_file.write(file_stream.read())
             temp_file_path = temp_file.name
-
+        
         loader = PyPDFLoader(temp_file_path)
         documents = loader.load()
         os.remove(temp_file_path)
         return documents
-
     elif mime_type == "text/plain":
         loader = TextLoader(file_stream)
     elif mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         loader = Docx2txtLoader(file_stream)
     else:
         raise ValueError("Unsupported file format. Use PDF, TXT, or DOCX.")
-
+    
     return loader.load()
 
 # --- Function to Split Documents into Chunks ---
@@ -84,7 +79,7 @@ def create_vector_store(chunks):
 # --- Function to Query Document and Get Answer ---
 def query_document(query, vector_store):
     retriever = vector_store.as_retriever()
-    chat_model = ChatGoogleGenerativeAI(model="gemini-1.5-pro-002", google_api_key=os.environ["GOOGLE_API_KEY"])
+    chat_model = ChatGoogleGenerativeAI(model="gemini-1.5-pro-002", google_api_key=GOOGLE_API_KEY)
     qa_chain = RetrievalQA.from_chain_type(llm=chat_model, chain_type="stuff", retriever=retriever)
     return qa_chain.invoke(query)
 
@@ -97,11 +92,11 @@ def index():
 def process_query():
     data = request.json
     query = data.get("query")
-
+    
     files = get_files_from_drive()
     if not files:
         return jsonify({"response": "No files found in Google Drive."})
-
+    
     chosen_file = files[0]
     file_id = chosen_file["id"]
     mime_type = chosen_file["mimeType"]
@@ -109,7 +104,7 @@ def process_query():
     documents = load_documents(file_stream, mime_type)
     chunks = split_documents(documents)
     vector_store = create_vector_store(chunks)
-
+    
     response = query_document(query, vector_store)
     return jsonify({"response": response})
 

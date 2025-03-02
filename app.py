@@ -68,7 +68,7 @@ def load_documents(file_stream, mime_type):
 
 # --- Function to Split Documents into Chunks ---
 def split_documents(documents):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
     return text_splitter.split_documents(documents)
 
 # --- Function to Create Vector Store Using FAISS ---
